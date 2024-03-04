@@ -64,5 +64,11 @@ public class MoviesController : ControllerBase
     return NoContent();
   }
 
+  [HttpGet("search")]
+  public async Task<ActionResult<List<Movie>>> SearchMoviesAsync(string title)
+  {
+    return await _moviesService.SearchMoviesAsync(title);
+  }
+
 
 }

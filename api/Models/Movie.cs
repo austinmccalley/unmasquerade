@@ -9,5 +9,6 @@ namespace UnmasqueradeApi.Models
     [BsonRepresentation(BsonType.ObjectId)]
     public string? Id { get; set; }
     public string Title { get; set; } = null!;
+    public string TMDBId { get; set; } = null!;
   }
 }
