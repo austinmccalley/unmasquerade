@@ -1,8 +1,5 @@
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
-using TMDbLib.Client;
-using TMDbLib.Objects.General;
-using TMDbLib.Objects.Search;
 using UnmasqueradeApi.Core;
 using UnmasqueradeApi.Models;
 
@@ -12,14 +9,12 @@ public class MoviesService
 {
   private readonly IMongoCollection<Movie> _moviesCollection;
   private readonly TMDBService _tmdbService;
-  private readonly TMDbClient _tmdbClient;
 
   public MoviesService(IOptions<UnmasqueradeDatabaseSettings> settings, IOptions<TmdbSettings> tmdbSettings, TMDBService tMDBService)
   {
     var client = new MongoClient(settings.Value.ConnectionString);
     var database = client.GetDatabase(settings.Value.DatabaseName);
     _moviesCollection = database.GetCollection<Movie>(settings.Value.MoviesCollectionName);
-    _tmdbClient = new TMDbClient(tmdbSettings.Value.ApiKey);
 
     _tmdbService = tMDBService;
   }
