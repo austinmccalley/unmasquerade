@@ -6,6 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.Configure<UnmasqueradeDatabaseSettings>(builder.Configuration.GetSection("Database"));
 builder.Services.Configure<TmdbSettings>(builder.Configuration.GetSection("TMDB"));
 builder.Services.AddSingleton<MoviesService>();
+builder.Services.AddSingleton<TMDBService>();
 
 builder.Services.AddControllers()
     .AddJsonOptions(

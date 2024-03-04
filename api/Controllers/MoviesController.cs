@@ -67,7 +67,14 @@ public class MoviesController : ControllerBase
   [HttpGet("search")]
   public async Task<ActionResult<List<Movie>>> SearchMoviesAsync(string title)
   {
-    return await _moviesService.SearchMoviesAsync(title);
+    List<Movie> movies = await _moviesService.SearchMoviesAsync(title);
+
+    if (movies.Count == 0)
+    {
+      return NotFound();
+    }
+
+    return Ok(movies);
   }
 
 

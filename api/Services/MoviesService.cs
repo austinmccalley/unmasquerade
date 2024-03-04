@@ -11,15 +11,17 @@ namespace UnmasqueradeApi.Services;
 public class MoviesService
 {
   private readonly IMongoCollection<Movie> _moviesCollection;
+  private readonly TMDBService _tmdbService;
   private readonly TMDbClient _tmdbClient;
 
-  public MoviesService(IOptions<UnmasqueradeDatabaseSettings> settings, IOptions<TmdbSettings> tmdbSettings)
+  public MoviesService(IOptions<UnmasqueradeDatabaseSettings> settings, IOptions<TmdbSettings> tmdbSettings, TMDBService tMDBService)
   {
     var client = new MongoClient(settings.Value.ConnectionString);
     var database = client.GetDatabase(settings.Value.DatabaseName);
     _moviesCollection = database.GetCollection<Movie>(settings.Value.MoviesCollectionName);
-
     _tmdbClient = new TMDbClient(tmdbSettings.Value.ApiKey);
+
+    _tmdbService = tMDBService;
   }
 
   public async Task<List<Movie>> GetMoviesAsync()
@@ -34,6 +36,14 @@ public class MoviesService
 
   public async Task<Movie> CreateMovieAsync(Movie movie)
   {
+    // Check if the movie is already in the database
+    Movie? movieInDatabase = await _moviesCollection.Find(m => movie.TMDBId == m.TMDBId && movie.Title == m.Title ).FirstOrDefaultAsync();
+
+    if (movieInDatabase != null)
+    {
+      return movieInDatabase;
+    }
+
     await _moviesCollection.InsertOneAsync(movie);
     return movie;
   }
@@ -60,27 +70,28 @@ public class MoviesService
     {
       return movies;
     }
-
-    // If we don't have the movie in the database, we will search for it in the TMDB API
-    SearchContainer<SearchMovie> results = await _tmdbClient.SearchMovieAsync(title);
-
-    foreach (SearchMovie result in results.Results)
+    else
     {
-      Movie movie = new Movie
+      // If we don't have the movie in the database, we will search for it in the TMDB API
+      List<TmdbMovie> tmdbMovies = await _tmdbService.SearchMoviesAsync(title);
+
+      // Convert the TmdbMovies to Movies
+      foreach (TmdbMovie tmdbMovie in tmdbMovies)
       {
-        Title = result.Title,
-        TMDBId = result.Id.ToString()
-      };
-      movies.Add(movie);
+        Movie movie = new Movie(tmdbMovie);
+        movies.Add(movie);
+      }
+
+      // Save the movies in the database
+      for (int i = 0; i < movies.Count; i++)
+      {
+        movies[i] = await CreateMovieAsync(movies[i]);
+      }
+
+      return movies;
     }
 
-    // Save the movies in the database
-    foreach (Movie movie in movies)
-    {
-      await _moviesCollection.InsertOneAsync(movie);
-    }
 
-    return movies;
   }
 
 }
